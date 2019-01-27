@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link href="https://fonts.googleapis.com/css?family=Poppins|Montserrat|Open+Sans|Open+Sans+Condensed:300|Quicksand|Roboto+Mono|Source+Sans+Pro" rel="stylesheet">
+<!------ Include the above in your HEAD tag ---------->
+</head>
+<style>
+body {background : #fff; font-family: 'Roboto Mono', monospace; font-size: 12px;}
+.search-table{
+    padding: 10%;
+    margin-top: -6%;
+}
+.search-box{
+    background: #c1c1c1;
+    border: 1px solid #ababab;
+    padding: 3%;
+}
+.search-box input:focus{
+    box-shadow:none;
+    border:2px solid #eeeeee;
+}
+.search-list{
+    background: #fff;
+    border: 1px solid #ababab;
+    border-top: none;
+}
+.search-list h3{
+    background: #eee;
+    padding: 3%;
+    margin-bottom: 0%;
+}
+
+</style>
+<body>
+<br><br>
+<div class="container">
+    <div class="clearfix">
+        <div class="pull-left">
+            <h1>Intelligent Document Extraction</h1>
+            <h3 class="lead">Read scanned pdf/image files</h3>
+        </div>
+    </div>
+	<br>
+<!-- 	<div id="draggable">HERE IS SOMETHING</div>
+	<script>
+		$('#draggable').draggable({
+					scroll: true,
+					scrollSensitivity: 40,
+					scrollSpeed: 40
+					});
+	</script> -->
+	<style>.nav-item:hover {background: #fcfcfc}</style>
+	<ul class="nav nav-tabs">
+		<li class="nav-item">
+			<a class="nav-link active" id="upload-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home" aria-selected="true">Upload</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="remove-noise-tab" data-toggle="tab" href="#remnoise" role="tab" aria-controls="home" aria-selected="true">Remove Noise</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="rotate-tab" data-toggle="tab" href="#rotate" role="tab" aria-controls="home" aria-selected="true">Rotate</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="crop-text-tab" data-toggle="tab" href="#croptext" role="tab" aria-controls="home" aria-selected="true">Crop Text</a>
+		</li>		
+		<li class="nav-item">
+			<a class="nav-link" id="mark-checkboxes-tab" data-toggle="tab" href="#markcheck" role="tab" aria-controls="home" aria-selected="true">Mark Checkboxes</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="read-hw-dates-tab" data-toggle="tab" href="#hwdates" role="tab" aria-controls="home" aria-selected="true">Read Handwritten Dates</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="read-textboxes-tab" data-toggle="tab" href="#readtextbox" role="tab" aria-controls="home" aria-selected="true">Read Textboxes</a>
+		</li>
+	</ul>
+	<div class="tab-content" id="myTabContent">
+		
+		<!----------------------------------------------------------------------------------------->
+		<!--------------------------------------- H O M E ----------------------------------------->
+		<!----------------------------------------------------------------------------------------->
+		<div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+			<br>
+			<blockquote>
+				<p>Upload a scanned pdf form. The background process runs to scan the uploaded document and would identify 
+					following. The links given above will be activated once the processing is completed.</p>
+				<ul>
+					<li>Standardise the dcoument and remove any noise if the document contains some</li>
+					<li>Rotate the document in case the document is skewed and the text is not straight</li>
+					<li>The doument may have unnecessary white boundary. Crop the region of interest</li>
+					<li>Identify all the checkboxes in the given page or given section of page</li>
+					<li>Read hand-written dates in the scanned forms/images</li>
+					<li>Read text inside small textboxes</li>
+				</ul>
+			</blockquote>
+			<br>
+			<form id="upload-file" method="POST" enctype="multipart/form-data">
+				<fieldset>
+					<!-- <label for="file">Select a file</label> -->
+					<!-- <div class="file btn btn-primary"><input name="file" type="file" class="form-control-file border"></div> -->
+					<input name="file" type="file" class="form-control-file border">
+				</fieldset>
+				<fieldset>
+					<button id="upload-file-btn" type="button" class="btn btn-danger" style="margin: 20px 0 0 0;">Upload</button>
+				</fieldset>
+			</form>
+			<script>
+			var FILE_OBJECT = {}
+			//$(function() {
+			// To process the file upload
+				$('#upload-file-btn').click(
+					function() {
+						var form_data = new FormData($('#upload-file')[0]);
+						$.ajax({
+							type: 'POST',
+							url: '/metadata/uploader',
+							data: form_data,
+							contentType: false,
+							cache: false,
+							processData: false,
+							success: function(data) {
+										$('#pdf_display').css('display', 'block');
+										$('#file-display').attr('src', JSON.parse(data).file);
+										$('#file-info').empty();
+										$('#file-info').append(getinfo(JSON.parse(data)));
+										//var obj = {a:1, 'b':'foo', c:[false,null, {d:{e:1.3e5}}]}; 
+										//$('#file-info').append('<pre>' + JSON.stringify(obj,null,'\t') + '</pre>');
+										//console.log(JSON.parse(data));
+										FILE_OBJECT = JSON.parse(data);
+									},
+						});
+					});
+			//});
+			
+			function getinfo(obj) {
+				var name = (obj.file).split('/')[(obj.file).split('/').length-1],
+					size = (parseFloat(obj.size)/1000).toFixed(2),
+					ext  = name.split('.')[1];
+				
+				var elem  = '<div class="row">';
+				    elem += '	<div class="col-lg-4"><strong>Name</strong></div> <div class="col-lg-8">' + name +'</div>';
+					elem += '</div>';
+					elem += '<div class="row">';
+					elem += '	<div class="col-lg-4"><strong>Size</strong></div> <div class="col-lg-8">' + size +' kb</div>';
+					elem += '</div>';
+					elem += '<div class="row">';
+					elem += ' <div class="col-lg-4"><strong>Type</strong></div> <div class="col-lg-8">.'+ ext +'</div>';
+					elem += '</div>';
+					return elem;
+			}
+			</script>
+			<br><br><br>
+			<div id="pdf_display">
+				<div class="row">
+					<div class="col-lg-5">
+						<div class="card">
+							<div class="card-header"><strong>File Info</strong></div>
+							<div class="card-body" id="file-info"></div>
+							<br>
+							<!---------------------------------------->
+							<!-- This section is for the checkboxes -->
+							<!---------------------------------------->
+							<p style="text-align: center; margin-left: 20px; font-size: 13px; font-weight: bold; background: #777; color: #fff; width: 130px; border-radius: 5px; padding: 5px;">Form Options</p>
+							<!-- Default inline 1-->
+							<div class="custom-control custom-checkbox custom-control-inline" style="margin-left: 20px">
+								<input type="checkbox" class="custom-control-input" id="w9f">
+								<label class="custom-control-label" for="w9f">if w9 forms</label>
+							</div>
+							
+							<!-- Default inline 2-->
+							<div class="custom-control custom-checkbox custom-control-inline" style="margin-left: 20px">
+								<input type="checkbox" class="custom-control-input" id="w8f">
+								<label class="custom-control-label" for="w8f">if w8 forms</label>
+							</div>
+							
+							<!-- Default inline 3-->
+							<div class="custom-control custom-checkbox custom-control-inline" style="margin-left: 20px">
+								<input type="checkbox" class="custom-control-input" id="hwd">
+								<label class="custom-control-label" for="hwd">if handwriten dates</label>
+							</div>
+
+							<!---------------------------------------->
+							<!-- Checkboxes section ends here       -->
+							<!---------------------------------------->
+							<br><br>
+							<button id="process-file-btn" type="button" class="btn btn-primary disabled" style="width: 100px; margin: 0 0 0 20px;">Process</button>
+							
+							<div id="log" 
+								 style="margin: 20px; 
+										padding: 10px; 
+										font-family: Courier New, Courier, Lucida Sans Typewriter, 
+													 Lucida Typewriter, monospace; 
+										font-size: 14px;">
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-7">
+						<iframe 
+							id="file-display" 
+							src="" 
+							style="width:650px; height:800px;" 
+							frameborder="1">
+						</iframe>
+						<style>
+							iframe {
+								height: 800px;
+								width: 650px;
+								resize: both;
+								overflow: auto;
+							}
+						</style>
+					</div>
+				</div>
+				<br><br>
+				<script>
+				
+				function get_log_element(action, counter) {
+					var logElement  = '<div class="d-inline" id="log-comment-' + counter + '">' + action + ' ... ';
+					    logElement += '<div class="d-inline" id="log-img-' + counter + '"><img src="/static/img/ajax-loader.gif"/></div></div><br>';
+						return logElement;
+				}
+				
+				// To process the file upload
+				$('#process-file-btn').click(
+					function() {
+						// update the FILE_OBJECT to have the checkbox options
+						var CHECKBOX_ARRAY = $('.custom-control-input');
+						for (var i=0; i < CHECKBOX_ARRAY.length; i++) {
+							FILE_OBJECT[CHECKBOX_ARRAY[i].id] = CHECKBOX_ARRAY[i].checked;
+						}
+						console.log(FILE_OBJECT);
+						$('#log').empty();
+						//$('#pdf_display #log').css('background', '#dbf4ff');
+						$('#pdf_display #log').css('background', '#f7f7f7');
+						$('#pdf_display #log').append(get_log_element('Processing the pdf form ... ', 0));
+						$.ajax({
+							type: 'POST',
+							url: '/execute',
+							contentType: 'application/json',
+							data: JSON.stringify(FILE_OBJECT)
+						}).done(function(data) {
+							//console.log(JSON.stringify(data,null,'\t'));
+							$('#pdf_display #log #log-img-0').empty().append('<strong>Done</strong><hr>');
+							$('#pdf_display #log #log-img-0').append('<pre>' + data + '</pre>');
+							imgArr=['ch-3-sts-a.jpg',
+									'ch-3-sts-b.jpg',
+									'ch-4-sts-a.jpg',
+									'ch-4-sts-b.jpg',
+									'pg2-part2.jpg',
+									'pg2-part3.jpg',
+									'pg2-part4.jpg',
+									'pg2-part5.jpg',
+									'pg3.jpg',
+									'pg4.jpg',
+									'pg5.jpg',
+									'pg6.jpg',
+									'pg7.jpg',
+									'pg8.jpg',
+									'pg8_pre.jpg'];
+							displayImages(imgArr);
+						})
+						
+						//var log_arr = [
+						//				'Converting pdf pages to images',
+						//				'Standardising the image file',
+						//				'Reading section of pages',
+						//				'Identifying checkboxes',
+						//				'Reading handwritten text'
+						//			 ];
+						//var count = 0;
+						//$('#pdf_display #log').css('background', '#e8fbff');
+						//$('#pdf_display #log').append(get_log_element(log_arr[count], count));
+						//count++;
+						//
+						//var t = setInterval(logger, 3000);
+					    //function logger() {
+						//	if (count == 5)
+						//	{
+						//		$('#pdf_display #log #log-img-'+(count-1)).empty();
+						//		$('#pdf_display #log #log-img-'+(count-1)).append('<strong>Complete</strong>');
+						//		clearInterval(t);
+						//	} else {
+						//		$('#pdf_display #log #log-img-'+(count-1)).empty();
+						//		$('#pdf_display #log #log-img-'+(count-1)).append('<strong>Done</strong>');
+						//		$('#pdf_display #log').append(get_log_element(log_arr[count], count));
+						//		count++;
+						//	}
+						//}
+						
+						
+					//$('#pdf_display #log').append('');
+					//var form_data = new FormData($('#upload-file')[0]);
+					//$.ajax({
+					//	type: 'POST',
+					//	url: '/metadata/uploader',
+					//	data: form_data,
+					//	contentType: false,
+					//	cache: false,
+					//	processData: false,
+					//	success: function(data) {
+					//				$('#pdf_display').css('display', 'block');
+					//				$('#file-display').attr('src', JSON.parse(data).file);
+					//				$('#file-info').empty();
+					//				$('#file-info').append(getinfo(JSON.parse(data)));
+					//				//var obj = {a:1, 'b':'foo', c:[false,null, {d:{e:1.3e5}}]}; 
+					//				//$('#file-info').append('<pre>' + JSON.stringify(obj,null,'\t') + '</pre>');
+					//				//console.log(JSON.parse(data)); 
+					//			},
+					//});
+					});
+				</script>
+				<style>
+					#pdf_display { display: none; font-size: 14px}
+					#file_upload div {
+						position: relative;
+						overflow: hidden;
+						margin-right: 10px;
+					}
+					#file_upload .hidden-input {
+						position: absolute;
+						font-size: 50px;
+						opacity: 1;
+						right: 0;
+						top: 0;
+					}
+					.form-control {
+						width: 300px; float: left; margin-right: 5px;
+					}
+					.btn { float: left}
+				</style>
+			</div>
+			
+			<div id="cimg-display"><div class="card-header"><strong>Scanned Pages</strong></div></div>
+			<script>
+				function displayImages(imgArr) {
+					for (var i=0; i < imgArr.length; i++) {
+						$('#cimg-display').append('<img class="imagebox" src="/static/tmp/'+ imgArr[i] +'" />');
+					}
+				}
+			</script>
+			<style>
+				.imagebox {
+					width: auto;
+					max-width: 450px;
+					height: auto;
+					max-height: 700px;
+					margin: 10px;
+					border: 2px #ccc solid;
+					border-radius: 2px;
+				}
+			</style>
+		</div>
+		
+		<!----------------------------------------------------------------------------------------->
+		<!------------------------- R E M O V E   N O I S E --------------------------------------->
+		<!----------------------------------------------------------------------------------------->
+		<div class="tab-pane fade" id="remnoise" role="tabpanel" aria-labelledby="remove-noise-tab">
+			<br>
+				<blockquote>
+					<p>Upload a image that has spots and is unclear and the backend API will return a image removing all the noise in the image.</p>
+				</blockquote>
+			<br>
+			<form id="noisyImg" method="POST" enctype="multipart/form-data">
+				<fieldset>
+					<input name="file" type="file" class="form-control-file border">
+				</fieldset>
+				<fieldset>
+					<button id="upload-nImg-btn" type="button" class="btn btn-danger" style="margin: 20px 0 0 0;">Remove Noise</button>
+				</fieldset>
+			</form>
+			<br><hr><br><br>
+			<div id="nImgDisplay">
+				<div class="row">
+					<div class="col-lg-6 draggable"><img id="nImg-original" class="imgbox" src="" /><div class="orig">Original</div></div>
+					<div class="col-lg-6 draggable"><img id="nImg-processed" class="imgbox" src="" /><div class="proc">Processed</div></div>
+				</div>
+			</div>
+			<script>
+				$('#upload-nImg-btn').click(
+					function() {
+						var form_data = new FormData($('#noisyImg')[0]);
+						$.ajax({
+							type: 'POST',
+							url: '/denoise',
+							data: form_data,
+							contentType: false,
+							cache: false,
+							processData: false,
+							success: function(data) {
+										$('#nImgDisplay').css('display', 'block');
+										$('#nImgDisplay #nImg-original').attr('src', data[0])
+										$('#nImgDisplay #nImg-processed').attr('src', data[1])
+										console.log(data);
+										//FILE_OBJECT = JSON.parse(data);
+									},
+						});
+					});
+			</script>
+			<script>
+				$( function() {
+					$( ".draggable" ).draggable();
+				});
+			</script>
+			<style>
+				#nImgDisplay {display: none;}
+				.orig {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #565956;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.proc {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #41c651;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.imgbox {
+					width: auto;
+					max-width: 550px;
+					height: auto;
+					max-height: 700px;
+					margin: 10px;
+					border: 2px #ccc solid;
+					border-radius: 2px;
+				}
+				
+			</style>
+		</div>
+
+		
+		<!----------------------------------------------------------------------------------------->
+		<!------------------------------------- R O T A T E --------------------------------------->
+		<!----------------------------------------------------------------------------------------->
+		<div class="tab-pane fade" id="rotate" role="tabpanel" aria-labelledby="rotate-tab">
+		<br>
+			<blockquote>
+				<p>Upload a image that is skewed and needs to be straightened.</p>
+			</blockquote>
+			<br>
+			<form id="skewedImg" method="POST" enctype="multipart/form-data">
+				<fieldset>
+					<input name="file" type="file" class="form-control-file border">
+				</fieldset>
+				<fieldset>
+					<button id="upload-skewImg-btn" type="button" class="btn btn-danger" style="margin: 20px 0 0 0;">Rotate Image</button>
+				</fieldset>
+			</form>
+			<br><hr><br><br>
+			<div id="nSkewDisplay">
+				<div class="row">
+					<div class="col-lg-6 draggable"><img id="skewImg-original" class="imgbox" src="" /><div class="orig">Original</div></div>
+					<div class="col-lg-6 draggable"><img id="skewImg-processed" class="imgbox" src="" /><div class="proc">Processed</div></div>
+				</div>
+			</div>
+			<script>
+				$('#upload-skewImg-btn').click(
+					function() {
+						var form_data = new FormData($('#skewedImg')[0]);
+						$.ajax({
+							type: 'POST',
+							url: '/deskew',
+							data: form_data,
+							contentType: false,
+							cache: false,
+							processData: false,
+							success: function(data) {
+										$('#nSkewDisplay').css('display', 'block');
+										$('#nSkewDisplay #skewImg-original').attr('src', data[0])
+										$('#nSkewDisplay #skewImg-processed').attr('src', data[1])
+										console.log(data);
+										//FILE_OBJECT = JSON.parse(data);
+									},
+						});
+					});
+			</script>
+			<style>
+				#nSkewDisplay {display: none;}
+				.orig {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #565956;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.proc {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #41c651;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.imgbox {
+					width: auto;
+					max-width: 550px;
+					height: auto;
+					max-height: 700px;
+					margin: 10px;
+					border: 2px #ccc solid;
+					border-radius: 2px;
+				}
+				
+			</style>
+		</div>
+		
+		<!----------------------------------------------------------------------------------------->
+		<!----------------------------------- C R O P   T E X T ----------------------------------->
+		<!----------------------------------------------------------------------------------------->
+		<div class="tab-pane fade" id="croptext" role="tabpanel" aria-labelledby="crop-text-tab">
+		<br>
+			<blockquote>
+				<p>Upload a image that has unnecessary white border. The utility extract region of interest having actual text.</p>
+			</blockquote>
+			<br>
+			<form id="cropImg" method="POST" enctype="multipart/form-data">
+				<fieldset>
+					<input name="file" type="file" class="form-control-file border">
+				</fieldset>
+				<fieldset>
+					<button id="upload-cropImg-btn" type="button" class="btn btn-danger" style="margin: 20px 0 0 0;">Crop Text</button>
+				</fieldset>
+			</form>
+			<br><hr><br><br>
+			<div id="nCropDisplay">
+				<div class="row">
+					<div class="col-lg-6 draggable"><img id="cropImg-original" class="imgbox" src="" /><div class="orig">Original</div></div>
+					<div class="col-lg-6 draggable"><img id="cropImg-processed" class="imgbox" src="" /><div class="proc">Processed</div></div>
+				</div>
+			</div>
+			<script>
+				$('#upload-cropImg-btn').click(
+					function() {
+						var form_data = new FormData($('#cropImg')[0]);
+						$.ajax({
+							type: 'POST',
+							url: '/crop',
+							data: form_data,
+							contentType: false,
+							cache: false,
+							processData: false,
+							success: function(data) {
+										$('#nCropDisplay').css('display', 'block');
+										$('#nCropDisplay #cropImg-original').attr('src', data[0])
+										$('#nCropDisplay #cropImg-processed').attr('src', data[1])
+										console.log(data);
+										//FILE_OBJECT = JSON.parse(data);
+									},
+						});
+					});
+			</script>
+			<style>
+				#nCropDisplay {display: none;}
+				.orig {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #565956;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.proc {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #41c651;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.imgbox {
+					width: auto;
+					max-width: 550px;
+					height: auto;
+					max-height: 700px;
+					margin: 10px;
+					border: 2px #ccc solid;
+					border-radius: 2px;
+				}
+				
+			</style>
+		</div>
+
+		
+		
+		<!----------------------------------------------------------------------------------------->
+		<!----------------------- M A R K   C H E C K B O X E S ----------------------------------->
+		<!----------------------------------------------------------------------------------------->
+		<div class="tab-pane fade" id="markcheck" role="tabpanel" aria-labelledby="mark-checkboxes-tab">
+		<br>
+			<blockquote>
+				<p>Upload a image that has checkboxes and the the page would return the image marking all the checkboxes and numbering them.</p>
+			</blockquote>
+			<br>
+			<form id="checkBoxImg" method="POST" enctype="multipart/form-data">
+				<fieldset>
+					<input name="file" type="file" class="form-control-file border">
+				</fieldset>
+				<fieldset>
+					<button id="upload-cbImg-btn" type="button" class="btn btn-danger" style="margin: 20px 0 0 0;">Mark Checkboxes</button>
+				</fieldset>
+			</form>
+			<br><hr><br><br>
+			<div id="nCbDisplay">
+				<div class="row">
+					<div class="col-lg-6 draggable"><img id="cbImg-original" class="imgbox" src="" /><div class="orig">Original</div></div>
+					<div class="col-lg-6 draggable"><img id="cbImg-processed" class="imgbox" src="" /><div class="proc">Processed</div></div>
+				</div>
+			</div>
+			<script>
+				$('#upload-cbImg-btn').click(
+					function() {
+						var form_data = new FormData($('#checkBoxImg')[0]);
+						$.ajax({
+							type: 'POST',
+							url: '/markcheckboxes',
+							data: form_data,
+							contentType: false,
+							cache: false,
+							processData: false,
+							success: function(data) {
+										$('#nCbDisplay').css('display', 'block');
+										$('#nCbDisplay #cbImg-original').attr('src', data[0])
+										$('#nCbDisplay #cbImg-processed').attr('src', data[1])
+										console.log(data);
+										//FILE_OBJECT = JSON.parse(data);
+									},
+						});
+					});
+			</script>
+			<style>
+				#nCbDisplay {display: none;}
+				.orig {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #565956;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.proc {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #41c651;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.imgbox {
+					width: auto;
+					max-width: 550px;
+					height: auto;
+					max-height: 700px;
+					margin: 10px;
+					border: 2px #ccc solid;
+					border-radius: 2px;
+				}
+				
+			</style>
+		</div>
+		
+		<br>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="panel-title">Demo Notes</h4>
+			</div>
+			<div class="card-body">
+				<ul>
+					<li>The maximum file size for uploads in this demo is <strong>999 KB</strong> (default file size is unlimited).</li>
+					<li>Only scanned image files converted to (<strong>PDF</strong>) are allowed in this demo (by default there is no file type restriction).</li>
+					<li>Uploaded files will be deleted automatically after <strong>5 minutes or less</strong> (demo files are stored in memory).</li>
+					<li>You can <strong>drag &amp; drop</strong> files from your desktop on this webpage (see <a href="https://github.com/blueimp/jQuery-File-Upload/wiki/Browser-support">Browser support</a>).</li>
+					<li>Please refer to the <a href="https://github.com/blueimp/jQuery-File-Upload">project website</a> and <a href="https://github.com/blueimp/jQuery-File-Upload/wiki">documentation</a> for more information.</li>
+					<li>Built with the <a href="http://getbootstrap.com/">Bootstrap</a> CSS framework and Icons from <a href="http://glyphicons.com/">Glyphicons</a>.</li>
+				</ul>
+			</div>
+		</div>
+
+	</div>
+</div>
+</body>
+</html>

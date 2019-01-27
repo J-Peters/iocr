@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<!------ Include the above in your HEAD tag ---------->
+</head>
+<style>
+body {background : #fff;}
+.search-table{
+    padding: 10%;
+    margin-top: -6%;
+}
+.search-box{
+    background: #c1c1c1;
+    border: 1px solid #ababab;
+    padding: 3%;
+}
+.search-box input:focus{
+    box-shadow:none;
+    border:2px solid #eeeeee;
+}
+.search-list{
+    background: #fff;
+    border: 1px solid #ababab;
+    border-top: none;
+}
+.search-list h3{
+    background: #eee;
+    padding: 3%;
+    margin-bottom: 0%;
+}
+
+</style>
+<body>
+<br><br>
+<div class="container">
+    <div class="clearfix">
+        <div class="pull-left">
+            <h1>Intelligent OCR</h1>
+            <h3 class="lead">Read scanned pdf/image files</h3>
+        </div>
+    </div>
+	<br>
+<!-- 	<div id="draggable">HERE IS SOMETHING</div>
+	<script>
+		$('#draggable').draggable({
+					scroll: true,
+					scrollSensitivity: 40,
+					scrollSpeed: 40
+					});
+	</script> -->
+	<style>.nav-item:hover {background: #f7f7f7}</style>
+	<ul class="nav nav-tabs">
+		<li class="nav-item">
+			<a class="nav-link active" id="upload-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home" aria-selected="true">Upload</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="remove-noise-tab" data-toggle="tab" href="#remnoise" role="tab" aria-controls="home" aria-selected="true">Remove Noise</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="rotate-tab" data-toggle="tab" href="#rotate" role="tab" aria-controls="home" aria-selected="true">Rotate</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="crop-text-tab" data-toggle="tab" href="#croptext" role="tab" aria-controls="home" aria-selected="true">Crop Text</a>
+		</li>		
+		<li class="nav-item">
+			<a class="nav-link" id="mark-checkboxes-tab" data-toggle="tab" href="#markcheck" role="tab" aria-controls="home" aria-selected="true">Mark Checkboxes</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="read-hw-dates-tab" data-toggle="tab" href="#hwdates" role="tab" aria-controls="home" aria-selected="true">Read Handwritten Dates</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="read-textboxes-tab" data-toggle="tab" href="#readtextbox" role="tab" aria-controls="home" aria-selected="true">Read Textboxes</a>
+		</li>
+	</ul>
+	<div class="tab-content" id="myTabContent">
+		<div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+			<br>
+			<blockquote>
+				<p>Upload a scanned pdf form. The background process runs to scan the uploaded document and would identify 
+					following. The links given above will be activated once the processing is completed.</p>
+				<ul>
+					<li>Standardise the dcoument and remove any noise if the document contains some</li>
+					<li>Rotate the document in case the document is skewed and the text is not straight</li>
+					<li>The doument may have unnecessary white boundary. Crop the region of interest</li>
+					<li>Identify all the checkboxes in the given page or given section of page</li>
+					<li>Read hand-written dates in the scanned forms/images</li>
+					<li>Read text inside small textboxes</li>
+				</ul>
+			</blockquote>
+			<br>
+			
+			{% with messages = get_flashed_messages() %}
+				{% if messages %}
+					<ul class=flashes>
+					{% for message in messages %}
+					<li>{{ message }}</li>
+					{% endfor %}
+					</ul>
+				{% endif %}
+			{% endwith %}
+			{% block body %}{% endblock %}
+
+			<br>
+			<form id="upload-file" method="POST" enctype="multipart/form-data">
+				<fieldset>
+					<!-- <label for="file">Select a file</label> -->
+					<!-- <div class="file btn btn-primary"><input name="file" type="file" class="form-control-file border"></div> -->
+					<input name="file" type="file" class="form-control-file border">
+				</fieldset>
+				<fieldset>
+					<button id="upload-file-btn" type="button" class="btn btn-danger" style="margin: 20px 0 0 0;">Upload</button>
+				</fieldset>
+			</form>
+			<script>
+			//$(function() {
+			// To process the file upload
+				$('#upload-file-btn').click(
+					function() {
+						var form_data = new FormData($('#upload-file')[0]);
+						$.ajax({
+							type: 'POST',
+							url: '/metadata/uploader',
+							data: form_data,
+							contentType: false,
+							cache: false,
+							processData: false,
+							success: function(data) {
+										$('#pdf_display').css('display', 'block');
+										$('#file-display').attr('src', JSON.parse(data).file);
+										$('#file-info').empty();
+										$('#file-info').append(getinfo(JSON.parse(data)));
+										//var obj = {a:1, 'b':'foo', c:[false,null, {d:{e:1.3e5}}]}; 
+										//$('#file-info').append('<pre>' + JSON.stringify(obj,null,'\t') + '</pre>');
+										//console.log(JSON.parse(data)); 
+									},
+						});
+					});
+			//});
+			
+			function getinfo(obj) {
+				var name = (obj.file).split('/')[(obj.file).split('/').length-1],
+					size = (parseFloat(obj.size)/1000).toFixed(2),
+					ext  = name.split('.')[1];
+				
+				var elem  = '<div class="row">';
+				    elem += '	<div class="col-sm-4"><strong>File Name</strong></div> <div class="col-sm-8">' + name +'</div>';
+					elem += '</div>';
+					elem += '<div class="row">';
+					elem += '	<div class="col-sm-4"><strong>File Size</strong></div> <div class="col-sm-8">' + size +' kb</div>';
+					elem += '</div>';
+					elem += '<div class="row">';
+					elem += ' <div class="col-sm-4"><strong>File Type</strong></div> <div class="col-sm-8">.'+ ext +'</div>';
+					elem += '</div>';
+					return elem;
+			}
+			</script>
+			<br><br><br>
+			<div id="pdf_display">
+				<div class="row">
+					<div class="col-sm-4">
+						<div class="card">
+							<div class="card-header">File Info</div>
+							<div class="card-body" id="file-info"></div>
+							<br>
+							<button id="process-file-btn" type="button" class="btn btn-primary disabled" style="width: 100px; margin: 0 0 0 20px;">Process</button>
+							<br>
+							
+							<div 	id="log" 
+									style="	margin: 20px; 
+											padding: 10px; 
+											font-family: Courier New, Courier, Lucida Sans Typewriter, 
+														 Lucida Typewriter, monospace; 
+											font-size: 12px;
+											background : '#e8fbff'">
+							</div>
+						</div>
+					</div>
+					<div class="col-sm-8">
+						<iframe 
+							id="file-display" 
+							src="/static/files/confirmation_Page.pdf" 
+							style="width:700px; height:800px;" 
+							frameborder="1">
+						</iframe>
+					</div>
+				</div>
+				<br><br>
+				<script>
+				function get_log_element(action, counter) {
+					var logElement  = '<div class="d-inline" id="log-comment-' + counter + '">' + action + ' ... ';
+					    logElement += '<div class="d-inline" id="log-img-' + counter + '"><img src="/static/img/ajax-loader.gif"/></div></div><br>';
+						return logElement;
+				}
+				
+				// To process the file upload
+				// This will be used later
+				$('#process-file-btn').click(
+					function() {
+						$('#log').empty();
+						//$('#pdf_display #log').css('background', '#e8fbff');
+						var log_arr = [
+										'Converting pdf pages to images',
+										'Standardising the image file',
+										'Reading section of pages',
+										'Identifying checkboxes',
+										'Reading handwritten text'
+									 ];
+						var count = 0;
+						$('#pdf_display #log').css('background', '#e8fbff');
+						$('#pdf_display #log').append(get_log_element(log_arr[count], count));
+						count++;
+						
+						var t = setInterval(logger, 3000);
+					    function logger() {
+							if (count == 5)
+							{
+								$('#pdf_display #log #log-img-'+(count-1)).empty();
+								$('#pdf_display #log #log-img-'+(count-1)).append('<strong>Complete</strong>');
+								clearInterval(t);
+							} else {
+								$('#pdf_display #log #log-img-'+(count-1)).empty();
+								$('#pdf_display #log #log-img-'+(count-1)).append('<strong>Done</strong>');
+								$('#pdf_display #log').append(get_log_element(log_arr[count], count));
+								count++;
+							}
+						}
+					$('#pdf_display #log').append('');
+					//var form_data = new FormData($('#upload-file')[0]);
+					//$.ajax({
+					//	type: 'POST',
+					//	url: '/metadata/uploader',
+					//	data: form_data,
+					//	contentType: false,
+					//	cache: false,
+					//	processData: false,
+					//	success: function(data) {
+					//				$('#pdf_display').css('display', 'block');
+					//				$('#file-display').attr('src', JSON.parse(data).file);
+					//				$('#file-info').empty();
+					//				$('#file-info').append(getinfo(JSON.parse(data)));
+					//				//var obj = {a:1, 'b':'foo', c:[false,null, {d:{e:1.3e5}}]}; 
+					//				//$('#file-info').append('<pre>' + JSON.stringify(obj,null,'\t') + '</pre>');
+					//				//console.log(JSON.parse(data)); 
+					//			},
+					//});
+					});
+				</script>
+				<style>
+					#pdf_display { display: none; font-size: 14px}
+					#file_upload div {
+						position: relative;
+						overflow: hidden;
+						margin-right: 10px;
+					}
+					#file_upload .hidden-input {
+						position: absolute;
+						font-size: 50px;
+						opacity: 1;
+						right: 0;
+						top: 0;
+					}
+					.form-control {
+						width: 300px; float: left; margin-right: 5px;
+					}
+					.btn { float: left}
+				</style>
+			</div>
+			
+			<div id="cimg-display"></div>
+			
+		</div>
+		<div class="tab-pane fade" id="remnoise" role="tabpanel" aria-labelledby="remove-noise-tab">
+		<br>
+			<div id="accordion">
+				<div class="card">
+					<div class="card-header">
+						<a class="card-link" data-toggle="collapse" href="#collapseOne">
+							Collapsible Group Item #1
+						</a>
+					</div>
+					<div class="row collapse" id="collapseOne" data-parent="#accordion">
+						<div class="show col-sm-3" style="margin: 10px 0 0 10px;">
+							<div class="card">
+								<div class="card-header">File Info</div>
+								<div class="card-body" id="file-info"></div>
+								<br>
+								<button id="upload-file-btn" type="button" class="btn btn-primary" style="width: 100px; margin: 0 0 0 20px;">Process</button>
+								<br>
+							</div>
+						</div>
+						<div class="show col-sm-7">
+							<div class="card-body">
+								<img src="/static/tmp/pg3.jpg" style="width: 700px; height: 900px; border: thin solid; border-radius: 5px;"/>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card">
+					<div class="card-header">
+						<a class="card-link" data-toggle="collapse" href="#collapseTwo">
+							Collapsible Group Item #2
+						</a>
+					</div>
+					
+					<div id="collapseTwo" class="collapse show" data-parent="#accordion">
+						<div class="card-body">
+							<img src="/static/tmp/pg4.jpg" style="width: 500px; height: 500px; border: thin solid; border-radius: 5px;"/>
+						</div>
+					</div>
+				</div>
+				<div class="card">
+					<div class="card-header">
+						<a class="card-link" data-toggle="collapse" href="#collapseThree">
+							Collapsible Group Item #3
+						</a>
+					</div>
+					<div id="collapseThree" class="collapse show" data-parent="#accordion">
+						<div class="card-body">
+							<img src="/static/tmp/pg5.jpg" style="width: 500px; height: 500px; border: thin solid; border-radius: 5px;"/>
+						</div>
+					</div>
+				</div>
+			
+				<!--<img src="/static/tmp/pg5.jpg" style="width: 500px; height: 500px; border: thin solid; border-radius: 10px;"/>
+				<img src="/static/tmp/pg6.jpg" style="width: 500px; height: 500px; border: thin solid; border-radius: 10px;"/>
+				<img src="/static/tmp/pg7.jpg" style="width: 500px; height: 500px; border: thin solid; border-radius: 10px;"/>
+				<img src="/static/tmp/pg8.jpg" style="width: 500px; height: 500px; border: thin solid; border-radius: 10px;"/> -->
+			</div>
+		</div>
+		<div class="tab-pane fade" id="rotate" role="tabpanel" aria-labelledby="rotate-tab"></div>
+		<br>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="panel-title">Demo Notes</h4>
+			</div>
+			<div class="card-body">
+				<ul>
+					<li>The maximum file size for uploads in this demo is <strong>999 KB</strong> (default file size is unlimited).</li>
+					<li>Only scanned image files converted to (<strong>PDF</strong>) are allowed in this demo (by default there is no file type restriction).</li>
+					<li>Uploaded files will be deleted automatically after <strong>5 minutes or less</strong> (demo files are stored in memory).</li>
+					<li>You can <strong>drag &amp; drop</strong> files from your desktop on this webpage (see <a href="https://github.com/blueimp/jQuery-File-Upload/wiki/Browser-support">Browser support</a>).</li>
+					<li>Please refer to the <a href="https://github.com/blueimp/jQuery-File-Upload">project website</a> and <a href="https://github.com/blueimp/jQuery-File-Upload/wiki">documentation</a> for more information.</li>
+					<li>Built with the <a href="http://getbootstrap.com/">Bootstrap</a> CSS framework and Icons from <a href="http://glyphicons.com/">Glyphicons</a>.</li>
+				</ul>
+			</div>
+		</div>
+
+	</div>
+</div>
+</body>
+</html>
