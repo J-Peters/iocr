@@ -1,0 +1,2 @@
+# iocr
+intelligent_ocr
