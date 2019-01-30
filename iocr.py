@@ -3,10 +3,17 @@ import json
 import os
 from werkzeug.utils import secure_filename
 from pdf2image import convert_from_path
+
 #import functions from tax form reader files
 import base_functions as bf
 import w8_processing as w8
 import cv2
+
+import PIL
+from PIL import Image
+import PIL.Image
+from pytesseract import image_to_string
+import pytesseract
 
 # Set up Flask
 app = Flask(__name__)
@@ -110,6 +117,32 @@ def mark_checkboxes():
     form_c = cv2.resize(bf.crop_form(target), (2500, 3000))
     w8.checkbox(form_c, filename='checkbox-'+filename)#; print(os.path.join(app.root_path, 'static', 'tmp', 'checkbox-'+filename))
   return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'checkbox-'+filename)])
+
+@app.route("/readdate", methods=['POST', 'GET'])
+def read_date():
+  if request.method == 'POST':
+    file = request.files['file']
+    filename = file.filename
+    target = os.path.join(app.root_path, 'static', 'tmp', filename)
+    file.save(target)
+    #img = cv2.imread(target)
+    weights = os.path.join('output', 'weights.hdf5')
+    date_value = bf.read_date(target, weights, filename='hwdate-'+filename); #print(date_value)
+    #w8.checkbox(form_c, filename='checkbox-'+filename)#; print(os.path.join(app.root_path, 'static', 'tmp', 'checkbox-'+filename))
+  return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'hwdate-'+filename), date_value])
+
+@app.route("/readtextboxes", methods=['POST', 'GET'])
+def red_textboxes():
+  if request.method == 'POST':
+    file = request.files['file']
+    filename = file.filename
+    target = os.path.join(app.root_path, 'static', 'tmp', filename)
+    file.save(target)
+    img = cv2.imread(target, 0)
+    tin_img = bf.get_tin(img, filename='textbox-'+filename)
+    tin = pytesseract.image_to_string((Image.fromarray(tin_img)).convert("RGB"), lang='eng');
+  return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'textbox-'+filename), tin])
+
 
 if __name__ == "__main__": app.run(host='0.0.0.0', port=port, debug=True)
 

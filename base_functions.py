@@ -210,7 +210,7 @@ def crop_form(form, filename='cropped.jpg', folder=tmp_folder):
 
 ''' Tax payer identification number '''
 
-def get_tin(img, folder=tmp_folder):
+def get_tin(img, filename='tin.jpg', folder=tmp_folder):
     (thresh, binImg) = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
     binImg = 255 - binImg
     kernel_length = np.array(img).shape[1]//80;
@@ -224,7 +224,7 @@ def get_tin(img, folder=tmp_folder):
     dilate = cv2.dilate(finImg, hKernel, iterations = 2)
     vdilate = cv2.dilate(dilate, vKernel, iterations = 6)
     stripImg = cv2.bitwise_or(img, vdilate); #showim(stripImg)
-    cv2.imwrite(os.path.join(folder, 'tin.jpg'), stripImg)
+    cv2.imwrite(os.path.join(folder, filename), stripImg)
     return cv2.resize(stripImg, (500, 500))
 
 ''' Federal tax classification '''
@@ -232,7 +232,7 @@ def get_fed_tax_cls(img):
     if len(img.shape) == 3:
        gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     else:
-       gray = img    
+       gray = img
     ret,thresh = cv2.threshold(gray,127,255,cv2.THRESH_BINARY_INV)
     kernel = np.ones((1,8), np.uint8)
     #img_erosion = cv2.erode(thresh, kernel, iterations=1)
@@ -254,9 +254,14 @@ def get_fed_tax_cls(img):
         #showim(roi)
     return fed_tax_cls.index(min(fed_tax_cls))
 
-def read_date(formDt):
-  outDt = ''
-  model = LeNet.build(numChannels=1, imgRows=28, imgCols=28, numClasses=10, weightsPath='D:\\Abhash\\Python\\iocr\\output\\weights.hdf5')
+def read_date(arg, weightsPath, numChannels=1, imgRows=28, imgCols=28, numClasses=10, filename='hwdates.jpg', folder=tmp_folder):
+  outDt = ''; #showim(formDt); #print(formDt.shape)
+  model = LeNet.build(numChannels=1, imgRows=28, imgCols=28, numClasses=10, weightsPath=weightsPath)
+  if type(arg) is np.ndarray:
+     formDt = arg.copy()
+  else: 
+     img = cv2.imread(arg); print(img.shape)
+     formDt = cv2.imread(arg, 0); print(img.shape)
   ret, thresh = cv2.threshold(~formDt, 127, 255, 0)
   image, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
   (sorted_ctrs, boundingBoxes) = sort_contours(contours, method="left-to-right")
@@ -267,7 +272,8 @@ def read_date(formDt):
      ret, inverted = cv2.threshold(tmp_img, 127, 255, cv2.THRESH_BINARY_INV)
      cnt = sorted_ctrs[i]
      x, y, w, h = cv2.boundingRect(cnt)
-     cv2.rectangle(formDt,(x,y),( x + w, y + h ),(0,0,255),2); #showim(formDt)
+     cv2.rectangle(img,(x-1,y-1),( x + w + 1, y + h + 1),(0,255,0),2) 
+     #showim(formDt)
      cropped = inverted[y:y + h, x:x + w]
      if (w < 15 and h < 15): continue
      #showim(cv2.resize(cropped, (100, 100)))
@@ -285,6 +291,8 @@ def read_date(formDt):
      prediction = probs.argmax(axis=1)
      #print(prediction[0])
      outDt = outDt + str(prediction[0])
+  cv2.imwrite(os.path.join(folder, filename), img)
+  K.clear_session()
   return outDt[:2]+'-'+outDt[3:5]+'-'+outDt[6:]
 
 if __name__ == "__main__":    
@@ -298,7 +306,7 @@ if __name__ == "__main__":
    elif fileName == 'USB-0134855':
       frm_dt = [2000, 2080, 1700, 2500]
    else:
-      frm_dt = [2055, 2130, 1700, 2500]
+      frm_dt = [2055, 2130, 1750, 2500]
 
    form_c = cv2.resize(crop_form(form), (2500, 3000))
    # get form header
@@ -388,7 +396,8 @@ if __name__ == "__main__":
    if fileName == 'USB-0134388':
       outDt = pytesseract.image_to_string(Image.fromarray(formDt).convert("RGB"), lang='eng'); 
    else:
-      outDt = read_date(formDt)
+      weightsPath = args['weights'] if args["load_model"] > 0 else None
+      outDt = read_date(formDt, weightsPath)
    
    w9_content['dt'] = outDt[:2]+'-'+outDt[3:5]+'-'+outDt[6:]
 
