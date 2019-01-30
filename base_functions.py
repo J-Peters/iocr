@@ -11,8 +11,8 @@ import pytesseract
 
 from pdf2image import convert_from_path
 
-pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files (x86)/Tesseract-OCR/tesseract'
-TESSDATA_PREFIX = 'C:/Program Files (x86)/Tesseract-OCR'
+#pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files (x86)/Tesseract-OCR/tesseract'
+#TESSDATA_PREFIX = 'C:/Program Files (x86)/Tesseract-OCR'
 
 # import the necessary packages
 from lenet import LeNet
@@ -28,41 +28,41 @@ import cv2
 
 federal_cls = {
                 0 : 'Individual/sole proprietor or single-memeber LLC', 
-				1 : 'C Corporation', 
-				2 : 'S Corporation', 
-				3 : 'Partenership',
-				4 : 'Trust/estate', 
-				5 : 'Limited liability company', 
-				6 : 'Other'
-			}
+		1 : 'C Corporation', 
+		2 : 'S Corporation', 
+		3 : 'Partenership',
+		4 : 'Trust/estate', 
+		5 : 'Limited liability company', 
+		6 : 'Other'
+		}
 
 
 imSects = {
             '1' : {
-			        'form_hdr_1'  : [0, 230, 0, 430],
-                    'form_hdr_2'  : [0, 230, 440,1900],
-                    'form_hdr_3'  : [0, 240, 2050,2400],
-                    'name'        : [240, 340, 155, 1800],
-                    'bus_nm'      : [340, 440, 180, 1800],
-                    'fed_tax_cls' : [440, 720, 170, 1910],
-                    'exemptions'  : [440, 720, 1905, 2500],
-                    'address'     : [720, 810, 160, 1600],
-                    'state'       : [820, 920, 160, 1600],
-                    'tin'         : [1000, 1420, 1700, 2500],
-					'date'        : []
-				  },
-		    '2' : {
-			        'form_hdr_1'  : [0, 230, 0, 430],
-                    'form_hdr_2'  : [0, 230, 440, 1900],
-                    'form_hdr_3'  : [0, 240, 2050, 2400],
-                    'name'        : [240, 340, 180, 1800],
-                    'bus_nm'      : [340, 440, 180, 1800],
-                    'fed_tax_cls' : [440, 850, 195, 1910],
-                    'exemptions'  : [440, 850, 1920, 2500],
-                    'address'     : [860, 945, 195, 1600],
-                    'state'       : [950, 1050, 160, 1600],
-                    'tin'         : [1180, 1550, 1700, 2500]
-			      }
+	        'form_hdr_1'  : [0, 230, 0, 430],
+                'form_hdr_2'  : [0, 230, 440,1900],
+                'form_hdr_3'  : [0, 240, 2050,2400],
+                'name'        : [240, 340, 155, 1800],
+                'bus_nm'      : [340, 440, 180, 1800],
+                'fed_tax_cls' : [440, 720, 170, 1910],
+                'exemptions'  : [440, 720, 1905, 2500],
+                'address'     : [720, 810, 160, 1600],
+                'state'       : [820, 920, 160, 1600],
+                'tin'         : [1000, 1420, 1700, 2500],
+		'date'        : []
+		  },
+	    '2' : {
+	        'form_hdr_1'  : [0, 230, 0, 430],
+                'form_hdr_2'  : [0, 230, 440, 1900],
+                'form_hdr_3'  : [0, 240, 2050, 2400],
+                'name'        : [240, 340, 180, 1800],
+                'bus_nm'      : [340, 440, 180, 1800],
+                'fed_tax_cls' : [440, 850, 195, 1910],
+                'exemptions'  : [440, 850, 1920, 2500],
+                'address'     : [860, 945, 195, 1600],
+                'state'       : [950, 1050, 160, 1600],
+                'tin'         : [1180, 1550, 1700, 2500]
+	      }
           }
 w9_content = {}
 
@@ -195,14 +195,12 @@ def crop_form(form, filename='cropped.jpg', folder=tmp_folder):
     img_bin = 255-img_bin
     kernel = np.ones((5, 5), np.uint8)
     img_tmp = cv2.dilate(img_bin, kernel, iterations=20)
-    #cv2.imwrite('bin_img.jpg', img_tmp)
     im2, contours, hierarchy = cv2.findContours(img_tmp, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     img_copy = img_orig.copy()
     areas = [cv2.contourArea(c) for c in contours]
     max_index = np.argmax(areas)
     cnt=contours[max_index]
     x,y,w,h = cv2.boundingRect(cnt)
-    #cv2.rectangle(img_copy,(x,y),(x+w,y+h),(0,255,0),2)
     cropped_img = img_copy[y:y+h, x:x+w]
     cv2.imwrite(os.path.join(folder, filename), cropped_img)
     return cropped_img
@@ -258,10 +256,11 @@ def read_date(arg, weightsPath, numChannels=1, imgRows=28, imgCols=28, numClasse
   outDt = ''; #showim(formDt); #print(formDt.shape)
   model = LeNet.build(numChannels=1, imgRows=28, imgCols=28, numClasses=10, weightsPath=weightsPath)
   if type(arg) is np.ndarray:
+     img = arg.copy()
      formDt = arg.copy()
   else: 
-     img = cv2.imread(arg); print(img.shape)
-     formDt = cv2.imread(arg, 0); print(img.shape)
+     img = cv2.imread(arg)
+     formDt = cv2.imread(arg, 0)
   ret, thresh = cv2.threshold(~formDt, 127, 255, 0)
   image, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
   (sorted_ctrs, boundingBoxes) = sort_contours(contours, method="left-to-right")
@@ -273,23 +272,18 @@ def read_date(arg, weightsPath, numChannels=1, imgRows=28, imgCols=28, numClasse
      cnt = sorted_ctrs[i]
      x, y, w, h = cv2.boundingRect(cnt)
      cv2.rectangle(img,(x-1,y-1),( x + w + 1, y + h + 1),(0,255,0),2) 
-     #showim(formDt)
      cropped = inverted[y:y + h, x:x + w]
      if (w < 15 and h < 15): continue
-     #showim(cv2.resize(cropped, (100, 100)))
      cropped = cv2.bitwise_not(cropped)
      thresh = cv2.threshold(cropped, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
      kernel = np.ones((2,2), np.uint8)
      gray_dilation = cv2.dilate(thresh, kernel, iterations=1)
      gray_erosion = cv2.erode(gray_dilation, kernel, iterations=1)
      gray_erosion=cv2.copyMakeBorder(gray_erosion, top=15, bottom=15, left=15, right=15, borderType= cv2.BORDER_CONSTANT, value=[0,0,0])
-     #showim(gray_erosion)
-     #print(gray_erosion.shape)
      the_img = cv2.resize(gray_erosion, (28, 28) )
      the_img = np.reshape(the_img, (1,28,28,1))
      probs = model.predict(the_img)
      prediction = probs.argmax(axis=1)
-     #print(prediction[0])
      outDt = outDt + str(prediction[0])
   cv2.imwrite(os.path.join(folder, filename), img)
   K.clear_session()

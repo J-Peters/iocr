@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
 import json
 import os
+import re
 from werkzeug.utils import secure_filename
 from pdf2image import convert_from_path
 
@@ -19,7 +20,7 @@ import pytesseract
 app = Flask(__name__)
 #app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
-port = int(os.getenv('PORT', 8000))
+port = int(os.getenv('PORT', 8080))
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'pdf'])
 def allowed_file(filename):
   return '.' in filename and \
@@ -37,17 +38,11 @@ def upload_file():
       # if user does not select file, browser also
       # submit an empty part without filename
       if file.filename == '':
-         #flash('No selected file')
-         #return redirect(request.url)
          return 'No selected file'
       if file and allowed_file(file.filename):
          filename = secure_filename(file.filename)
          file.save(os.path.join(app.root_path, 'static', 'files', filename))
          stat_path = app.static_url_path.replace('/', '')
-         #os.system('python base_functions.py --pdf-file D:\\DB_OCR\\deutschBank\\USB-0134388.pdf')
-         #return redirect(url_for('home'))
-         #print(os.path.getsize(os.path.join(app.root_path, 'static/files', filename)))
-         #return os.path.join(app.static_url_path, 'files', filename)
          return json.dumps({'file': os.path.join(stat_path, 'files', filename), 'size' : os.path.getsize(os.path.join(app.root_path, 'static', 'files', filename))})
    return '''
     <!doctype html>
@@ -62,16 +57,17 @@ def upload_file():
 @app.route("/execute", methods=['POST', 'GET'])
 def process_file():
   if request.method == 'POST':
-    content = request.json; print(content)
-    file = content['file']; print(file)
+    content = request.json
+    file = content['file']
+    weightsPath=os.path.join('output', 'weights.hdf5')
     if content['w9f']:
        if content['hwd']:
-          os.system('python base_functions.py --pdf-file ' + file + ' --load-model 1 --weights output\weights.hdf5 > logfile.txt')
+          os.system('python base_functions.py --pdf-file ' + file + ' --load-model 1 --weights ' + weightsPath + ' > logfile.txt')
        else:
           os.system('python base_functions.py --pdf-file ' + file + ' > logfile.txt')
     elif content['w8f']:
        if content['hwd']:
-          os.system('python w8_processing.py --pdf-file ' + file + ' --load-model 1 --weights output\weights.hdf5 > logfile.txt')
+          os.system('python w8_processing.py --pdf-file ' + file + ' --load-model 1 --weights ' + weightsPath + ' > logfile.txt')
        else:
           os.system('python w8_processing.py --pdf-file ' + file + ' > logfile.txt')
     f = open("logfile.txt", "r") #; print(f.read())
@@ -84,7 +80,7 @@ def remove_noise():
     filename = file.filename
     target = os.path.join(app.root_path, 'static', 'tmp', filename)
     file.save(target)
-    bf.remove_noise(target, 'denoised-'+filename)#; print(os.path.join(app.root_path, 'static', 'tmp', 'denoised-'+filename))
+    bf.remove_noise(target, 'denoised-'+filename)
   return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'denoised-'+filename)])
 
 @app.route("/deskew", methods=['POST', 'GET'])
@@ -94,7 +90,7 @@ def deskew():
     filename = file.filename
     target = os.path.join(app.root_path, 'static', 'tmp', filename)
     file.save(target)
-    bf.rotate_doc(target, filename='deskewed-'+filename)#; print(os.path.join(app.root_path, 'static', 'tmp', 'deskewed-'+filename))
+    bf.rotate_doc(target, filename='deskewed-'+filename)
   return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'deskewed-'+filename)])
 
 @app.route("/crop", methods=['POST', 'GET'])
@@ -104,7 +100,7 @@ def crop():
     filename = file.filename
     target = os.path.join(app.root_path, 'static', 'tmp', filename)
     file.save(target)
-    bf.crop_form(target, filename='cropped-'+filename)#; print(os.path.join(app.root_path, 'static', 'tmp', 'cropped-'+filename))
+    bf.crop_form(target, filename='cropped-'+filename)
   return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'cropped-'+filename)])
 
 @app.route("/markcheckboxes", methods=['POST', 'GET'])
@@ -115,7 +111,7 @@ def mark_checkboxes():
     target = os.path.join(app.root_path, 'static', 'tmp', filename)
     file.save(target)
     form_c = cv2.resize(bf.crop_form(target), (2500, 3000))
-    w8.checkbox(form_c, filename='checkbox-'+filename)#; print(os.path.join(app.root_path, 'static', 'tmp', 'checkbox-'+filename))
+    w8.checkbox(form_c, filename='checkbox-'+filename)
   return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'checkbox-'+filename)])
 
 @app.route("/readdate", methods=['POST', 'GET'])
@@ -125,10 +121,8 @@ def read_date():
     filename = file.filename
     target = os.path.join(app.root_path, 'static', 'tmp', filename)
     file.save(target)
-    #img = cv2.imread(target)
     weights = os.path.join('output', 'weights.hdf5')
     date_value = bf.read_date(target, weights, filename='hwdate-'+filename); #print(date_value)
-    #w8.checkbox(form_c, filename='checkbox-'+filename)#; print(os.path.join(app.root_path, 'static', 'tmp', 'checkbox-'+filename))
   return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'hwdate-'+filename), date_value])
 
 @app.route("/readtextboxes", methods=['POST', 'GET'])
@@ -139,9 +133,13 @@ def red_textboxes():
     target = os.path.join(app.root_path, 'static', 'tmp', filename)
     file.save(target)
     img = cv2.imread(target, 0)
-    tin_img = bf.get_tin(img, filename='textbox-'+filename)
-    tin = pytesseract.image_to_string((Image.fromarray(tin_img)).convert("RGB"), lang='eng');
-  return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'textbox-'+filename), tin])
+    idnum_img = bf.get_tin(img, filename='textbox-'+filename)
+    idnum = pytesseract.image_to_string((Image.fromarray(idnum_img)).convert("RGB"), lang='eng')
+    if re.match('[0-9]*\s*-[0-9]*\s*-[0-9]*\s*', idnum):
+       idNum = idnum.replace(' ', '')
+    else:
+       idNum = idnum.replace(' ', '')
+  return jsonify([os.path.join('static', 'tmp', filename), os.path.join('static', 'tmp', 'textbox-'+filename), idNum])
 
 
 if __name__ == "__main__": app.run(host='0.0.0.0', port=port, debug=True)
