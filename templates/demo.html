@@ -54,7 +54,7 @@ body {background : #fff; font-family: 'Roboto Mono', monospace; font-size: 12px;
 					scrollSpeed: 40
 					});
 	</script> -->
-	<style>.nav-item:hover {background: #fcfcfc}</style>
+	<style>.nav-item a:hover {color: #ea1962}</style>
 	<ul class="nav nav-tabs">
 		<li class="nav-item">
 			<a class="nav-link active" id="upload-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home" aria-selected="true">Upload</a>
@@ -674,7 +674,185 @@ body {background : #fff; font-family: 'Roboto Mono', monospace; font-size: 12px;
 				
 			</style>
 		</div>
+
+		<!----------------------------------------------------------------------------------------->
+		<!----------------------- R E A D    H A N D W R I T T E N    D A T E S ------------------->
+		<!----------------------------------------------------------------------------------------->
+		<div class="tab-pane fade" id="hwdates" role="tabpanel" aria-labelledby="read-handwritten-dates">
+		<br>
+			<blockquote>
+				<p>Upload a image that has hand written date and the page would return the image marking all the characters and date value</p>
+			</blockquote>
+			<br>
+			<form id="readHwDates" method="POST" enctype="multipart/form-data">
+				<fieldset>
+					<input name="file" type="file" class="form-control-file border">
+				</fieldset>
+				<fieldset>
+					<button id="upload-hwdt-btn" type="button" class="btn btn-danger" style="margin: 20px 0 0 0;">Read Handwritten Dates</button>
+				</fieldset>
+			</form>
+			<br><br><br>
+			<div id="nHwDtDisplay">
+				<div class="row">
+					<div class="col-lg-6"><img id="hwImg-original" class="imgbox" src="" /><div class="orig">Uploaded Date</div></div>
+					<div class="col-lg-6"><img id="hwImg-processed" class="imgbox" src="" /><div class="proc">Processed Date</div></div>
+					<div class="col-lg-6"></div>
+					<!-- <div class="col-lg-6 draggable"><img id="hwImg-processed" class="imgbox" src="" /><div class="proc">Processed</div></div> -->
+					<div 	class="col-lg-4 vcenter" 
+							style="	background: #f2f2f2; 
+									display: flex;
+									align-items: center;     /* Align the flex-items vertically */
+									justify-content: center;
+									margin-left: 25px">
+							<h2><strong>Date : </strong> <span id="hwDateVal"></span></h2>
+					</div>
+				</div>
+			</div>
+			<script>
+				$('#upload-hwdt-btn').click(
+					function() {
+						var form_data = new FormData($('#readHwDates')[0]);
+						$.ajax({
+							type: 'POST',
+							url: '/readdate',
+							data: form_data,
+							contentType: false,
+							cache: false,
+							processData: false,
+							success: function(data) {
+										$('#nHwDtDisplay').css('display', 'block');
+										$('#nHwDtDisplay #hwImg-original').attr('src', data[0])
+										$('#nHwDtDisplay #hwImg-processed').attr('src', data[1])
+										$('#nHwDtDisplay #hwDateVal').text(data[2])
+										console.log(data[2]);
+										//FILE_OBJECT = JSON.parse(data);
+									},
+						});
+					});
+			</script>
+			<style>
+				#nHwDtDisplay {display: none;}
+				.orig {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #565956;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.proc {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #41c651;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.imgbox {
+					width: auto;
+					max-width: 550px;
+					height: auto;
+					max-height: 700px;
+					margin: 10px;
+					border: 2px #000 solid;
+					border-radius: 2px;
+				}
+				
+			</style>
+		</div>
+
 		
+		<!----------------------------------------------------------------------------------------->
+		<!------------------------------ R E A D   T E X T B O X E S ------------------------------>
+		<!----------------------------------------------------------------------------------------->
+		<div class="tab-pane fade" id="readtextbox" role="tabpanel" aria-labelledby="read-textboxes-dates">
+		<br>
+			<blockquote>
+				<p>Upload a image that has textboxes and the page would return the image removing borders around text and the value contained within</p>
+			</blockquote>
+			<br>
+			<form id="readTxtBox" method="POST" enctype="multipart/form-data">
+				<fieldset>
+					<input name="file" type="file" class="form-control-file border">
+				</fieldset>
+				<fieldset>
+					<button id="upload-rdtxtbx-btn" type="button" class="btn btn-danger" style="margin: 20px 0 0 0;">Read TextBox</button>
+				</fieldset>
+			</form>
+			<br><br><br>
+			<div id="nTxtBxDisplay">
+				<div class="row">
+					<div class="col-lg-6"><img id="txtBxImg-original" class="imgbox" src="" /><div class="orig">Uploaded TextBox</div></div>
+					<div class="col-lg-6"><img id="txtBxImg-processed" class="imgbox" src="" /><div class="proc">Processed TextBox</div></div>
+					<div class="col-lg-6"></div>
+					<!-- <div class="col-lg-6 draggable"><img id="hwImg-processed" class="imgbox" src="" /><div class="proc">Processed</div></div> -->
+					<div 	class="col-lg-4 vcenter" 
+							style="	background: #f2f2f2; 
+									display: flex;
+									align-items: center;     /* Align the flex-items vertically */
+									justify-content: center;
+									margin-left: 25px">
+							<h2><strong>TIN : </strong> <span id="txtBxVal"></span></h2>
+					</div>
+				</div>
+			</div>
+			<script>
+				$('#upload-rdtxtbx-btn').click(
+					function() {
+						var form_data = new FormData($('#readTxtBox')[0]);
+						$.ajax({
+							type: 'POST',
+							url: '/readtextboxes',
+							data: form_data,
+							contentType: false,
+							cache: false,
+							processData: false,
+							success: function(data) {
+										$('#nTxtBxDisplay').css('display', 'block');
+										$('#nTxtBxDisplay #txtBxImg-original').attr('src', data[0])
+										$('#nTxtBxDisplay #txtBxImg-processed').attr('src', data[1])
+										$('#nTxtBxDisplay #txtBxVal').text(data[2])
+										console.log(data[2]);
+										//FILE_OBJECT = JSON.parse(data);
+									},
+						});
+					});
+			</script>
+			<style>
+				#nTxtBxDisplay {display: none;}
+				.orig {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #565956;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.proc {   
+					position: absolute;
+					top: -15px;
+					left: 10px;
+					background: #41c651;
+					color: white;
+					padding: 5px;
+					border-radius: 5px;
+				}
+				.imgbox {
+					width: auto;
+					max-width: 550px;
+					height: auto;
+					max-height: 700px;
+					margin: 10px;
+					border: 2px #000 solid;
+					border-radius: 2px;
+				}
+				
+			</style>
+		</div>
 		<br>
 		<div class="card">
 			<div class="card-header">
